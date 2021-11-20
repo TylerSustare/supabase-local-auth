@@ -1,45 +1,55 @@
-import { useState } from "react";
-import logo from "./logo.svg";
+import React from "react";
+import { Home } from "./Home";
+import Auth from "./Auth";
+import { UserContextProvider, useUser } from "./UserContext";
+
 import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0);
+import {
+  ApolloClient,
+  InMemoryCache,
+  ApolloProvider,
+  createHttpLink,
+} from "@apollo/client";
+
+import { setContext } from "@apollo/client/link/context";
+
+const httpLink = createHttpLink({
+  uri: "http://localhost:3000/graphql",
+});
+
+const authLink = setContext((_, { headers }) => {
+  // get the authentication token from local storage if it exists
+  const authToken = localStorage.getItem("supabase.auth.token");
+  const token = authToken ? JSON.parse(authToken) : null;
+  // return the headers to the context so httpLink can read them
+  return {
+    headers: {
+      ...headers,
+      authorization: token
+        ? `Bearer ${token?.currentSession?.access_token ?? ""}`
+        : "",
+    },
+  };
+});
+
+const client = new ApolloClient({
+  link: authLink.concat(httpLink),
+  cache: new InMemoryCache(),
+});
+
+export default function App() {
+  const Container = () => {
+    const { user } = useUser();
+
+    return <>{user ? <Home /> : <Auth />}</>;
+  };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>Hello Vite + React!</p>
-        <p>
-          <button type="button" onClick={() => setCount((count) => count + 1)}>
-            count is: {count}
-          </button>
-        </p>
-        <p>
-          Edit <code>App.tsx</code> and save to test HMR updates.
-        </p>
-        <p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-          {" | "}
-          <a
-            className="App-link"
-            href="https://vitejs.dev/guide/features.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Vite Docs
-          </a>
-        </p>
-      </header>
-    </div>
+    <UserContextProvider>
+      <ApolloProvider client={client}>
+        <Container />
+      </ApolloProvider>
+    </UserContextProvider>
   );
 }
-
-export default App;

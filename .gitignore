@@ -2,3 +2,5 @@
 **/supabase/.temp
 **/supabase/.env
 **/supabase/.globals.sql
+
+.env
