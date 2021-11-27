@@ -18,13 +18,15 @@ const ADD_CLASSROOM = gql`
 `;
 
 export const Home = () => {
-  const [addClassroom, { data: _data }] = useMutation(ADD_CLASSROOM);
+  const [addClassroom] = useMutation(ADD_CLASSROOM, {
+    refetchQueries: [GET_CLASSROOMS, "Classrooms"],
+  });
 
-  const addNewItem = () => {};
   const { loading, error, data } = useQuery(GET_CLASSROOMS, {
     pollInterval: 2000,
   });
   if (loading) return <p>Loading ...</p>;
+  if (error) return <p>Error :(</p>;
   return (
     <div className="App">
       <h1>Data</h1>
@@ -44,8 +46,8 @@ export const Home = () => {
       <button onClick={async () => await supabase.auth.signOut()}>
         Sign Out
       </button>
-      {data.classrooms.map(({ id }) => (
-        <h2 key={id}>ID: {id}</h2>
+      {data.classrooms.map((d: any) => (
+        <h2 key={d.id}>ID: {d.id}</h2>
       ))}
     </div>
   );
